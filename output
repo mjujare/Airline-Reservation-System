@@ -1,0 +1,12 @@
+F,00,00,Ada Lovelace
+F,00,01,Alan Turing
+F,01,00,Donald Knuth,Computer Science Professors
+F,01,01,Robert Sedgewick,Computer Science Professors
+F,01,02,Mark Allen Weiss,Computer Science Professors
+E,00,00,Larry Page
+E,00,01,Marissa Mayer
+E,00,02,Sergei Brin
+E,01,00,Ken Thompson,Computer Scientists
+E,01,01,Dennis Richie,Computer Scientists
+E,01,02,Richard Stallman,Computer Scientists
+E,01,03,Linus Torvalds,Computer Scientists
