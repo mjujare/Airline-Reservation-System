@@ -1,0 +1,775 @@
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.StringTokenizer;
+import java.util.Scanner;
+
+/**
+ * Constructs a CLASS: ReservationSystem
+ * 
+ * @author Madhuri Jujare
+ * @version 09-10-15
+ */
+public class ReservationSystem
+{
+
+    private static int Fla, Flo;
+    private static int Ela, Elo;
+    
+    private static int FROWS =  2, FCOLS = 4;
+    private static int EROWS = 20, ECOLS = 6;
+
+    private static int FIRST = 0, ECONOMY = 1;
+    private static int INDIVIDUAL = 0, GROUP = 1;
+    private static int FREE = 0, PENDING = 1, TAKEN = 2;
+
+    private static int FW1 = 0, FW2 = 3;
+    private static int FA1 = 1, FA2 = 2;
+
+    private static int EW1 = 0, EW2 = 5;
+    private static int EA1 = 2, EA2 = 3;
+    private static int EC1 = 1, EC2 = 4;
+
+	private static int[][]    sF = new    int [FROWS][FCOLS];	// seat
+	private static String[][] gF = new String [FROWS][FCOLS];	// group name
+	private static String[][] iF = new String [FROWS][FCOLS];	// individual name
+
+	private static int[][]    sE = new int    [EROWS][ECOLS];	// seat
+	private static String[][] gE = new String [EROWS][ECOLS];	// group name
+	private static String[][] iE = new String [EROWS][ECOLS];	// individual name
+
+	private static char Fcol[] = { 'A', 'B', 'C', 'D' };
+	private static char Ecol[] = { 'A', 'B', 'C', 'D', 'E', 'F' };
+
+    private static Scanner Sin = new Scanner(System.in);
+
+    
+    /*
+     * printMatrix is a helper method for debugging
+     * @param Service     * 
+     */
+    public static void printMatrix(int Service)
+	{
+		if (Service == 0) {
+			System.out.println("First Class Seats:");
+			for (int i = 0; i < FROWS; i++) {
+				System.out.print("Row " + i + ":");
+				for (int j = 0; j < FCOLS; j++)
+					System.out.print(" " + sF[i][j]);
+				System.out.println("");
+			}
+		}
+		else {
+			System.out.println("Economy Class Seats:");
+			for (int i = 0; i < EROWS; i++) {
+				if (i < 10)
+					System.out.print("Row 0" + i + ":");
+				else
+					System.out.print("Row " + i + ":");
+				for (int j = 0; j < ECOLS; j++)
+					System.out.print(" " + sE[i][j]);
+				System.out.println("");
+			}
+		}
+	}
+
+	/* 
+	 * Computes largest number of adjacent vacant seats in row i of First Class
+	 * Output variable Fla: largest number of adjacent vacant seats
+	 * Output variable Flo: starting index/column of adjacent vacant seats
+	 * @param int i: row i
+	 */
+	public static void getFlalo(int i)
+	{
+		Fla = 0;
+		Flo = 0;
+		int currentLargest = 0, curLo = 0;
+		for (int j = 0; j < FCOLS; j++) {
+			if (sF[i][j] == FREE) {
+				if (currentLargest == 0)
+					curLo = j;
+				currentLargest++;
+			}
+			else if (currentLargest > Fla) {
+				Fla = currentLargest;
+				Flo = curLo;
+				currentLargest = 0;
+			}
+		}
+		if (currentLargest > Fla) {
+			Fla = currentLargest;
+			Flo = curLo;
+		}
+		System.out.println("getFlalo: i=" + i + ", Fla=" + Fla + ", Flo=" + Flo); 
+	}
+	
+	/* 
+	 * Computes largest number of adjacent vacant seats in row i of Economy Class
+	 * Output variable Ela: largest number of adjacent vacant seats
+	 * Output variable Elo: starting index/column of adjacent vacant seats
+	 * @param int i: row i
+	 */
+	public static void getElalo(int i)
+	{
+		Ela = 0;
+		Elo = 0;
+		int currentLargest = 0, curLo = 0;
+		for (int j = 0; j < ECOLS; j++) {
+			if (sE[i][j] == FREE) {
+				if (currentLargest == 0)
+					curLo = j;
+				currentLargest++;
+			}
+			else if (currentLargest > Ela) {
+				Ela = currentLargest;
+				Elo = curLo;
+				currentLargest = 0;
+			}
+		}
+		if (currentLargest > Ela) {
+			Ela = currentLargest;
+			Elo = curLo;
+		}
+		System.out.println("getElalo: i=" + i + ", Ela=" + Ela + ", Elo=" + Elo); 
+	}
+
+    /* 
+     * Loads (reads) file consisting of seat information
+     * inputed into the reservation system
+     * @param fileName
+     */
+    public static void loadFile(String fileName)
+    {
+        try {
+            // Set up the input file
+            BufferedReader Fin = new BufferedReader(new FileReader(fileName));
+        	Scanner inputFile = new Scanner(Fin);
+        	while (inputFile.hasNextLine()) {
+        		String oneLine = inputFile.nextLine();
+				String[] Fields = oneLine.split(",");
+				// example: F,01,01,p9,g1
+            	int row = Integer.parseInt(Fields[1]);
+            	int col = Integer.parseInt(Fields[2]);
+            	String Pname = Fields[3];
+            	String Gname = null;
+				if (Fields.length > 4)
+					Gname = Fields[4];
+				if (Fields[0].charAt(0) == 'F') {
+					sF[row][col] = TAKEN;
+					iF[row][col] = Pname;
+            		if (Gname != null)
+						gF[row][col] = Gname;
+				}
+				else {
+					sE[row][col] = TAKEN;
+					iE[row][col] = Pname;
+            		if (Gname != null)
+						gE[row][col] = Gname;
+				}
+			}
+            Fin.close();
+        } catch(IOException ioe) {
+            System.err.println("Error opening/reading file '" + fileName + "'.");
+            System.exit(1);
+        }
+    }
+
+    /* 
+     * Saves a file containing seat information 
+     * inputed into the reservation system
+     * @param fileName
+     */
+    public static void saveFile(String fileName)
+    {
+        try {
+            // Set up the output file
+            PrintWriter Fout = new PrintWriter(new BufferedWriter(new FileWriter(fileName)));
+
+			// write First Class matrix
+			for (int i = 0; i < FROWS; i++) {
+				for (int j = 0; j < FCOLS; j++) {
+					if (sF[i][j] == TAKEN) {
+            			Fout.print("F,");
+
+						if (i < 10)
+            				Fout.print("0");
+            			Fout.print(i);
+
+            			Fout.print(",");
+						if (j < 10)
+            				Fout.print("0");
+            			Fout.print(j);
+
+            			Fout.print(",");
+            			Fout.print(iF[i][j]);
+            			if (gF[i][j] != null) {
+            				Fout.print(",");
+            				Fout.print(gF[i][j]);
+						}
+            			Fout.println("");
+					}
+				}
+			}
+
+			// write Economy Class matrix
+			for (int i = 0; i < EROWS; i++) {
+				for (int j = 0; j < ECOLS; j++) {
+					if (sE[i][j] == TAKEN) {
+            			Fout.print("E,");
+
+						if (i < 10)
+            				Fout.print("0");
+            			Fout.print(i);
+
+            			Fout.print(",");
+						if (j < 10)
+            				Fout.print("0");
+            			Fout.print(j);
+
+            			Fout.print(",");
+            			Fout.print(iE[i][j]);
+            			if (gE[i][j] != null) {
+            				Fout.print(",");
+            				Fout.print(gE[i][j]);
+						}
+            			Fout.println("");
+					}
+				}
+			}
+            Fout.close();
+        } catch(IOException ioe) {
+            System.err.println("Error opening/writing file '" + fileName + "'.");
+            System.exit(1);
+        }
+    }
+
+    /*
+     * Adds a passenger to the flight
+     * Reserves an individual seat
+     */
+    public static void addPassenger()
+    {
+        System.out.println("\nName:");
+        String Name = Sin.nextLine();
+
+        int Service;
+        System.out.println("Service Class:");
+        String inputLine = Sin.nextLine();
+
+        if ("Ff".contains("" + inputLine.charAt(0)))
+            Service = FIRST;
+        else
+            Service = ECONOMY;
+
+        char SeatPreference;
+        System.out.println("Seat Preference:");
+        inputLine = Sin.nextLine();
+
+        if ("Ww".contains("" + inputLine.charAt(0)))
+            SeatPreference = 'W';
+        else if ("Aa".contains("" + inputLine.charAt(0)))
+            SeatPreference = 'A';
+        else {
+            if (Service == FIRST)
+            	SeatPreference = 'A';
+			else // ECONOMY
+            	SeatPreference = 'C';
+		}
+
+
+		//				A B C D
+		//				0 1 2 3
+		// i=0,Row 1:	W A A W 
+		// i=1,Row 2:	W A A W
+
+		if (Service == FIRST) {
+			if (SeatPreference == 'W') {
+				boolean found = false;
+				for (int i = 0; i < FROWS; i++) {
+					if (sF[i][FW1] == FREE) {
+						found = true;
+						sF[i][FW1] = TAKEN;
+						iF[i][FW1] = "" + Name;
+						System.out.println("\n" + (i+1) + Fcol[FW1]);
+						break;
+					}
+					else if (sF[i][FW2] == FREE) {
+						found = true;
+						sF[i][FW2] = TAKEN;
+						iF[i][FW2] = "" + Name;
+						System.out.println("\n" + (i+1) + Fcol[FW2]);
+						break;
+					}
+				}
+				if (!found)
+					System.out.println("\nRequest failed.");
+
+			}
+			else { // 'A'
+				boolean found = false;
+				for (int i = 0; i < FROWS; i++) {
+					if (sF[i][FA1] == FREE) {
+						found = true;
+						sF[i][FA1] = TAKEN;
+						iF[i][FA1] = "" + Name;
+						System.out.println("\n" + (i+1) + Fcol[FA1]);
+						break;
+					}
+					else if (sF[i][FA2] == FREE) {
+						found = true;
+						sF[i][FA2] = TAKEN;
+						iF[i][FA2] = "" + Name;
+						System.out.println("\n" + (i+1) + Fcol[FA2]);
+						break;
+					}
+				}
+				if (!found)
+					System.out.println("\nRequest failed.");
+
+			}
+		}
+		else { // ECONOMY
+			if (SeatPreference == 'W') {
+				boolean found = false;
+				for (int i = 0; i < EROWS; i++) {
+					if (sE[i][EW1] == FREE) {
+						found = true;
+						sE[i][EW1] = TAKEN;
+						iE[i][EW1] = "" + Name;
+						System.out.println("\n" + (i+10) + Ecol[EW1]);
+						break;
+					}
+					else if (sE[i][EW2] == FREE) {
+						found = true;
+						sE[i][EW2] = TAKEN;
+						iE[i][EW2] = "" + Name;
+						System.out.println("\n" + (i+10) + Ecol[EW2]);
+						break;
+					}
+				}
+				if (!found)
+					System.out.println("\nRequest failed.");
+
+			}
+			else if (SeatPreference == 'C') {
+				boolean found = false;
+				for (int i = 0; i < EROWS; i++) {
+					if (sE[i][EC1] == FREE) {
+						found = true;
+						sE[i][EC1] = TAKEN;
+						iE[i][EC1] = "" + Name;
+						System.out.println("\n" + (i+10) + Ecol[EC1]);
+						break;
+					}
+					else if (sE[i][EC2] == FREE) {
+						found = true;
+						sE[i][EC2] = TAKEN;
+						iE[i][EC2] = "" + Name;
+						System.out.println("\n" + (i+10) + Ecol[EC2]);
+						break;
+					}
+				}
+				if (!found)
+					System.out.println("\nRequest failed.");
+
+			}
+			else { // 'A'
+				boolean found = false;
+				for (int i = 0; i < EROWS; i++) {
+					if (sE[i][EA1] == FREE) {
+						found = true;
+						sE[i][EA1] = TAKEN;
+						iE[i][EA1] = "" + Name;
+						System.out.println("\n" + (i+10) + Ecol[EA1]);
+						break;
+					}
+					else if (sE[i][EA2] == FREE) {
+						found = true;
+						sE[i][EA2] = TAKEN;
+						iE[i][EA2] = "" + Name;
+						System.out.println("\n" + (i+10) + Ecol[EA2]);
+						break;
+					}
+				}
+				if (!found)
+					System.out.println("\nRequest failed.");
+
+			}
+		}
+    }
+
+    /*
+     * Adds a group to the flight
+     * Reserves adjacent seats for group members
+     */
+    public static void addGroup()
+    {
+        System.out.println("\naddGroup-> GroupName:");
+        String GroupName = Sin.nextLine();
+
+		System.out.println("*** GroupName=" + GroupName);
+
+        System.out.println("\nNames:");
+        String NameList = Sin.nextLine();
+
+		String[] Names = NameList.split(",");
+
+        System.out.println("addGroup-> Service Class: [F]irst or [E]conomy: ");
+        String inputLine = Sin.nextLine();
+
+        if ("Ff".contains("" + inputLine.charAt(0))) { // FIRST
+			int la[] = new int[FROWS];	// largest number of adjacent vacant seats
+			int	lo[] = new int[FROWS];
+			for (int i = 0; i < FROWS; i++) {
+				getFlalo(i);
+				la[i] = Fla; lo[i] = Flo;
+			}
+
+			int nameIndex = 0;
+			int seatsToBeFilled = Names.length;
+			for (int i = 0; i < FROWS; i++) {
+				if (la[i] >= Names.length) { // Row i has enough adjacent vacant seats
+					for (int j = lo[i]; j < FCOLS && nameIndex < Names.length; j++) {
+						if (sF[i][j] != FREE)
+							System.out.println("addGroup: Internal ERROR 1");
+						else {
+							sF[i][j] = TAKEN;
+							iF[i][j] = Names[nameIndex++];
+							gF[i][j] = GroupName;
+							--seatsToBeFilled;
+							System.out.println("" + (i+1) + Fcol[j]);
+						}
+					}
+					if (seatsToBeFilled != 0)
+						System.out.println("addGroup: Internal ERROR 2");
+					return;
+				}
+			}
+
+			// No row has enough adjacent vacant seats
+			while (seatsToBeFilled > 0) {
+				System.out.println("*** addGroup: seatsToBeFilled = " + seatsToBeFilled);
+				int largest = 0, row = 0;
+				for (int i = 0; i < FROWS; i++) {
+					if (largest < la[i]) {
+						largest = la[i];
+						row = i;
+					}
+				}
+
+				if (largest == 0) { // The array la[] has all zeros
+					// There are not enough vacant seats
+					System.out.println("\naddGroup: Request failed.");
+
+					for (int i = 0; i < FROWS; i++)
+						for (int j = 0; j < FCOLS; j++)
+							if (sF[i][j] == PENDING)
+								sF[i][j] = FREE;
+					return;
+				}
+
+				// row has maximum number of adjacent vacant seats
+				for (int j = lo[row]; j < lo[row] + la[row] && nameIndex < Names.length; j++) {
+					if (sF[row][j] != FREE)
+						System.out.println("addGroup: Internal ERROR 3");
+					else {
+						sF[row][j] = PENDING;
+						iF[row][j] = Names[nameIndex++];
+						gF[row][j] = GroupName;
+						--seatsToBeFilled;
+					}
+				}
+
+				// recompute la[row]
+				getFlalo(row);
+				la[row] = Fla; lo[row] = Flo;
+			}
+
+			System.out.println("*** addGroup: seatsToBeFilled = " + seatsToBeFilled);
+
+			// request is successful, so change PENDING to TAKEN
+			for (int i = 0; i < FROWS; i++)
+				for (int j = 0; j < FCOLS; j++)
+					if (sF[i][j] == PENDING) {
+						sF[i][j] = TAKEN;
+						System.out.println("" + (i+1) + Fcol[j]);
+					}
+		}
+		else { // ECONOMY
+			int la[] = new int[EROWS];	// largest number of adjacent vacant seats
+			int	lo[] = new int[EROWS];
+			for (int i = 0; i < EROWS; i++) {
+				getElalo(i);
+				la[i] = Ela; lo[i] = Elo;
+			}
+
+			int nameIndex = 0;
+			int seatsToBeFilled = Names.length;
+			for (int i = 0; i < EROWS; i++) {
+				if (la[i] >= Names.length) { // Row i has enough adjacent vacant seats
+					for (int j = lo[i]; j < ECOLS && nameIndex < Names.length; j++) {
+						if (sE[i][j] != FREE)
+							System.out.println("addGroup: Internal ERROR 1a");
+						else {
+							sE[i][j] = TAKEN;
+							iE[i][j] = Names[nameIndex++];
+							gE[i][j] = GroupName;
+							--seatsToBeFilled;
+							System.out.println("" + (i+10) + Ecol[j]);
+						}
+					}
+					if (seatsToBeFilled != 0)
+						System.out.println("addGroup: Internal ERROR 2a");
+					return;
+				}
+			}
+
+			// No row has enough adjacent vacant seats
+			while (seatsToBeFilled > 0) {
+				System.out.println("*** addGroup: seatsToBeFilled = " + seatsToBeFilled);
+				int largest = 0, row = 0;
+				for (int i = 0; i < EROWS; i++) {
+					if (largest < la[i]) {
+						largest = la[i];
+						row = i;
+					}
+				}
+
+				if (largest == 0) { // The array la[] has all zeros
+					// There are not enough vacant seats
+					System.out.println("\naddGroup: Request failed.");
+
+					for (int i = 0; i < EROWS; i++)
+						for (int j = 0; j < ECOLS; j++)
+							if (sE[i][j] == PENDING)
+								sE[i][j] = FREE;
+					return;
+				}
+
+				// row has maximum number of adjacent vacant seats
+				for (int j = lo[row]; j < lo[row] + la[row] && nameIndex < Names.length; j++) {
+					if (sE[row][j] != FREE)
+						System.out.println("addGroup: Internal ERROR 3a");
+					else {
+						sE[row][j] = PENDING;
+						iE[row][j] = Names[nameIndex++];
+						gE[row][j] = GroupName;
+						--seatsToBeFilled;
+					}
+				}
+
+				// recompute la[row]
+				getElalo(row);
+				la[row] = Ela; lo[row] = Elo;
+			}
+
+			System.out.println("*** addGroup: seatsToBeFilled = " + seatsToBeFilled);
+
+			// request is successful, so change PENDING to TAKEN
+			for (int i = 0; i < EROWS; i++)
+				for (int j = 0; j < ECOLS; j++)
+					if (sE[i][j] == PENDING) {
+						sE[i][j] = TAKEN;
+						System.out.println("" + (i+10) + Ecol[j]);
+					}
+		}
+    }
+
+    /* 
+     * Cancels a reservation
+     * Reservation can be for a group or an individual
+     */
+    public static void cancelReservations()
+    {
+		boolean found = false;
+
+        System.out.println("\n[I]NDIVIDUAL cancellation or [G]ROUP cancellation?");
+        String inputLine = Sin.nextLine();
+
+        if ("Ii".contains("" + inputLine.charAt(0))) { // INDIVIDUAL
+            System.out.println("\nName:");
+        	String name = Sin.nextLine();
+
+			for (int i = 0; i < FROWS; i++)
+				for (int j = 0; j < FCOLS; j++) {
+					if (sF[i][j] != TAKEN)
+						continue;
+					if (!iF[i][j].equals(name))
+						continue;
+					if (gF[i][j] != null) {
+						System.out.println("Individual passenger '" + name + "' is associated group '" + gF[i][j] + "'.");
+						continue;
+					}
+					sF[i][j] = FREE;
+					iF[i][j] = null;
+					found = true;
+				}
+							
+			for (int i = 0; i < EROWS; i++)
+				for (int j = 0; j < ECOLS; j++) {
+					if (sE[i][j] != TAKEN)
+						continue;
+					if (!iE[i][j].equals(name))
+						continue;
+					if (gE[i][j] != null) {
+						System.out.println("Individual passenger '" + name + "' is associated group '" + gE[i][j] + "'.");
+						continue;
+					}
+					sE[i][j] = FREE;
+					iE[i][j] = null;
+					found = true;
+				}
+
+			if (!found)
+				System.out.println("Cancelling individual reservation with name '" + name + "' failed.");
+        }
+		else { // GROUP
+            System.out.println("\nGroup Name:");
+        	String group = Sin.nextLine();
+
+			for (int i = 0; i < FROWS; i++)
+				for (int j = 0; j < FCOLS; j++) {
+					if (sF[i][j] != TAKEN)
+						continue;
+					if (gF[i][j] == null)
+						continue;
+					if (gF[i][j].equals(group)) {
+						sF[i][j] = FREE;
+						gF[i][j] = null;
+						iF[i][j] = null;
+						found = true;
+					}
+				}
+							
+			for (int i = 0; i < EROWS; i++)
+				for (int j = 0; j < ECOLS; j++) {
+					if (sE[i][j] != TAKEN)
+						continue;
+					if (gE[i][j] == null)
+						continue;
+					if (gE[i][j].equals(group)) {
+						sE[i][j] = FREE;
+						gE[i][j] = null;
+						iE[i][j] = null;
+						found = true;
+					}
+				}
+
+			if (!found)
+				System.out.println("Cancelling group reservation with name '" + group + "' failed.");
+        }
+    }
+
+    /* 
+     * Prints total number of available seats
+     */
+    public static void printSeatAvailabilityChart()
+    {
+        System.out.println("\nprintSeatAvailabilityChart-> [F]irst or [E]conomy Class?");
+        String inputLine = Sin.nextLine();
+
+        if ("Ff".contains("" + inputLine.charAt(0))) {	// FIRST class
+			System.out.print("First");
+			for (int i = 0; i < FROWS; i++) {
+				boolean firstEntry = true;
+				for (int j = 0; j < FCOLS; j++) {
+					if (sF[i][j] == FREE)
+						if (firstEntry) {
+							System.out.print(" " + (i+1) + ": " + Fcol[j]); 			
+							firstEntry = false;
+							
+						}
+						else
+							System.out.print(", " + Fcol[j]); 
+
+				}
+			}
+			System.out.println("");
+        }
+		else { // Economy Class
+			System.out.print("Economy");
+			for (int i = 0; i < EROWS; i++) {
+				boolean firstEntry = true;
+				for (int j = 0; j < ECOLS; j++) {
+					if (sE[i][j] == FREE)
+						if (firstEntry) {
+							System.out.print(" " + (i+10) + ": " + Ecol[j]);
+							firstEntry = false;
+						}
+						else
+							System.out.print(", " + Ecol[j]); 
+
+				}
+			}
+			System.out.println("");
+		}
+    }
+
+    /*
+     * Prints the manifest: taken seats with seat numbers
+     * and names assigned to each seat
+     */
+    public static void printManifest()
+    {
+        System.out.println("\nprintManifest-> [F]irst or [E]conomy Class?");
+        String inputLine = Sin.nextLine();
+
+        if ("Ff".contains("" + inputLine.charAt(0))) {	// FIRST class
+			System.out.print("First");
+			for (int i = 0; i < FROWS; i++)
+				for (int j = 0; j < FCOLS; j++)
+					if (sF[i][j] == TAKEN)
+						System.out.print(" " + (i+1) + Fcol[j]	+ ": " + iF[i][j]);
+			System.out.println("");
+        }
+		else { // Economy Class
+			System.out.print("Economy");
+			for (int i = 0; i < EROWS; i++)
+				for (int j = 0; j < ECOLS; j++)
+					if (sE[i][j] == TAKEN)
+						System.out.print(" " + (i+10) + Ecol[j]	+ ": " + iE[i][j]);
+			System.out.println("");
+		}
+    }
+
+    /*
+     * This is the main method
+     */
+    public static void main(String[] args)
+    {
+        if (args.length != 1) {
+            System.err.println("ERROR: Incorrect number of arguments: Expected 1, Actual " + args.length);
+            System.err.println("Usage: java ReservationSystem <reservation file name>");
+            System.exit(1);
+        }
+
+        File f =  new File(args[0]);
+        if (f.exists())
+            loadFile(args[0]);
+
+        String Prompt = "\nAdd [P]assenger, Add [G]roup, [C]ancel Reservations, Print Seating [A]vailability Chart, Print [M]anifest, Print [F]irst/[E]conomy Matrix, [Q]uit";
+
+        System.out.println(Prompt);
+        while (Sin.hasNextLine()) {
+            String option = Sin.nextLine();
+            switch (option.charAt(0)) {
+				case 'p': case 'P':	addPassenger(); break;
+                case 'g': case 'G': addGroup(); break;
+                case 'c': case 'C': cancelReservations(); break;
+                case 'a': case 'A': printSeatAvailabilityChart(); break;
+                case 'm': case 'M': printManifest(); break;
+                case 'f': case 'F': printMatrix(0); break;
+                case 'e': case 'E': printMatrix(1); break;
+                case 'q': case 'Q': saveFile(args[0]); System.exit(0); break;
+                default:    System.err.println("\nERROR: Option '" + option + "' not recognized; please try again."); break;
+            }
+            System.out.println(Prompt);
+        }
+        saveFile(args[0]);
+    }
+}
